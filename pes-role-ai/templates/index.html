@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PES 2026 Tactical Role Predictor - Kelompok 6: Wong Urakan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Proyek Akademik -->
+        <header>
+            <div class="project-tag">PROYEK AKADEMIK KECERDASAN ARTIFISIAL</div>
+            <h1>PES 2026 Tactical Role Predictor</h1>
+            <p class="subtitle">Engine Klasifikasi Karakter & Peran Taktis Berbasis Algoritma Scratch K-Nearest Neighbors</p>
+            <div class="badge-team">
+                <span class="group-title">Kelompok 6: Wong Urakan</span>
+                <span class="separator">•</span>
+                <span class="author">Ahmad Rizqi Mubarok (06.2025.1.07900)</span>
+                <span class="separator">•</span>
+                <span class="author">Wahyu Aditia Putra (06.2025.1.07869)</span>
+                <span class="separator">•</span>
+                <span class="supervisor">Dosen: Pak Kurniawan</span>
+            </div>
+        </header>
+
+        <!-- Banner Error Validasi (Jika Terjadi) -->
+        {% if error %}
+        <div class="alert alert-error">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+                <strong>Kesalahan Validasi Input:</strong>
+                <p>{{ error }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <main class="grid-layout">
+            <!-- Kolom Kiri: Formulir Input Parameter Karakter -->
+            <section class="card form-card">
+                <div class="card-header">
+                    <h2>Parameter Karakter Pemain</h2>
+                    <span class="badge-scale">Skala 1.0 - 5.0</span>
+                </div>
+                <p class="card-hint">Sesuaikan bobot parameter berikut berdasarkan preferensi aktivitas, gaya bermain, dan reaksi kognitif:</p>
+
+                <form method="POST" action="/" id="predictionForm">
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="q1">1. Agresivitas & Risiko</label>
+                            <span class="slider-val" id="val_q1">{{ "%.1f"|format(inputs.Agresivitas) if inputs else "3.0" }}</span>
+                        </div>
+                        <span class="field-desc">Kecenderungan menekan, duel fisik, dan keberanian mengambil risiko tinggi (FPS, Olahraga Ekstrem).</span>
+                        <input type="range" id="q1" name="q1" min="1" max="5" step="0.5"
+                               value="{{ inputs.Agresivitas if inputs else 3.0 }}"
+                               oninput="document.getElementById('val_q1').innerText = parseFloat(this.value).toFixed(1)">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="q2">2. Visi Strategis & Kreativitas</label>
+                            <span class="slider-val" id="val_q2">{{ "%.1f"|format(inputs.Kreativitas) if inputs else "3.0" }}</span>
+                        </div>
+                        <span class="field-desc">Imajinasi spasial, antisipasi langkah lawan, dan variasi solusi kreatif (Catur, Puzzle, Desain).</span>
+                        <input type="range" id="q2" name="q2" min="1" max="5" step="0.5"
+                               value="{{ inputs.Kreativitas if inputs else 3.0 }}"
+                               oninput="document.getElementById('val_q2').innerText = parseFloat(this.value).toFixed(1)">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="q3">3. Disiplin Defensif & Kesabaran</label>
+                            <span class="slider-val" id="val_q3">{{ "%.1f"|format(inputs.Disiplin) if inputs else "3.0" }}</span>
+                        </div>
+                        <span class="field-desc">Kepatuhan posisi zona, ketahanan mental, dan kalkulasi risiko (Membaca, Analisis Data, Koleksi).</span>
+                        <input type="range" id="q3" name="q3" min="1" max="5" step="0.5"
+                               value="{{ inputs.Disiplin if inputs else 3.0 }}"
+                               oninput="document.getElementById('val_q3').innerText = parseFloat(this.value).toFixed(1)">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="q4">4. Kerjasama Tim & Distribusi</label>
+                            <span class="slider-val" id="val_q4">{{ "%.1f"|format(inputs.Kerjasama) if inputs else "3.0" }}</span>
+                        </div>
+                        <span class="field-desc">Kolektivitas, komunikasi harmonis, dan mengutamakan progresi tim (Game Co-op, Organisasi).</span>
+                        <input type="range" id="q4" name="q4" min="1" max="5" step="0.5"
+                               value="{{ inputs.Kerjasama if inputs else 3.0 }}"
+                               oninput="document.getElementById('val_q4').innerText = parseFloat(this.value).toFixed(1)">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="q5">5. Refleks Instan & Tanggap Krisis</label>
+                            <span class="slider-val" id="val_q5">{{ "%.1f"|format(inputs.Refleks) if inputs else "3.0" }}</span>
+                        </div>
+                        <span class="field-desc">Kecepatan motorik merespons stimulasi mendadak dan penyelamatan darurat (Tenis Meja, Reaksi Cepat).</span>
+                        <input type="range" id="q5" name="q5" min="1" max="5" step="0.5"
+                               value="{{ inputs.Refleks if inputs else 3.0 }}"
+                               oninput="document.getElementById('val_q5').innerText = parseFloat(this.value).toFixed(1)">
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <span class="btn-text">Hitung Prediksi KNN (K=5)</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Kolom Kanan: Panel Hasil Inferensi atau Panduan Sistem (State GET) -->
+            {% if result and not result.error %}
+            <section class="card result-card">
+                <div class="result-header">
+                    <div>
+                        <h2>Hasil Analisis Peran Taktis</h2>
+                        <span class="model-badge">Engine: Scratch KNN (Euclidean)</span>
+                    </div>
+                    <button type="button" class="btn-export" onclick="exportReport()" title="Unduh arsip laporan akademik (.txt)">
+                        📄 Unduh Laporan (.txt)
+                    </button>
+                </div>
+
+                <div class="role-summary-banner">
+                    <div class="role-main">
+                        <span class="role-badge role-{{ result.role|lower }}">{{ result.role }}</span>
+                        {% if result.tie_resolved %}
+                        <span class="tie-badge" title="Kondisi suara seri dipecahkan melalui Inverse Distance Weighting">Tie-Break: IDW Resolved</span>
+                        {% endif %}
+                    </div>
+                    <div class="confidence-container">
+                        <div class="confidence-label">
+                            <span>Tingkat Keyakinan (Confidence):</span>
+                            <strong>{{ result.confidence }}%</strong>
+                        </div>
+                        <div class="confidence-track">
+                            <div class="confidence-fill" style="width: {{ result.confidence }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar Canvas Beresolusi Tinggi -->
+                <div class="chart-wrapper">
+                    <canvas id="radarCanvas" width="340" height="340"></canvas>
+                </div>
+
+                <!-- Rincian Karakteristik Taktik PES 2026 -->
+                <div class="specs-grid">
+                    <div class="spec-item">
+                        <span class="spec-label">Rekomendasi Role PES 2026:</span>
+                        <span class="spec-value highlight">{{ result.role_pes }}</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Formasi Ideal:</span>
+                        <span class="spec-value">{{ result.formation }}</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Gaya Bermain Taktis:</span>
+                        <span class="spec-value">{{ result.playstyle }}</span>
+                    </div>
+                </div>
+
+                <div class="desc-box">
+                    <strong>Karakteristik Taktikal:</strong>
+                    <p>{{ result.desc }}</p>
+                </div>
+
+                <div class="instructions-box">
+                    <strong>Instruksi Lapangan PES 2026:</strong>
+                    <p>{{ result.instructions }}</p>
+                </div>
+
+                <!-- Log K-Tetangga Terdekat -->
+                <div class="neighbors-section">
+                    <h3>Log 5 Tetangga Terdekat (K=5):</h3>
+                    <div class="neighbor-table-wrapper">
+                        <table class="neighbor-table" id="neighborLogTable">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Label Sampel Latih</th>
+                                    <th>Jarak Euclidean</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dist, label in result.neighbors %}
+                                <tr>
+                                    <td>#{{ loop.index }}</td>
+                                    <td><span class="pill pill-{{ label|lower }}">{{ label }}</span></td>
+                                    <td><code>{{ "%.4f"|format(dist) }}</code></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            {% else %}
+            <!-- Panduan Sistem (Tampilan Default Mode GET) -->
+            <section class="card empty-card">
+                <div class="empty-header">
+                    <div class="empty-icon">⚽</div>
+                    <h2>Sistem Prediksi Taktik PES 2026</h2>
+                    <p class="empty-subtitle">Klasifikasi Posisi Berbasis Algoritma Scratch K-Nearest Neighbors (K=5)</p>
+                </div>
+
+                <div class="empty-body">
+                    <div class="info-block">
+                        <h3>Prinsip Kerja Algoritma (Zero-Library ML):</h3>
+                        <p>
+                            Aplikasi ini dibangun murni tanpa pustaka machine learning pihak ketiga (tanpa Scikit-Learn, Numpy, Scipy).
+                            Karakteristik pengguna dipetakan ke dalam ruang vektor berdimensi 5:
+                        </p>
+                        <ul class="dimension-list">
+                            <li><strong>Agresivitas:</strong> Nilai instingtif penyerangan dan risiko.</li>
+                            <li><strong>Kreativitas:</strong> Kemampuan membuka ruang dan visi distribusi.</li>
+                            <li><strong>Disiplin:</strong> Kepatuhan bertahan dan penjagaan zonal.</li>
+                            <li><strong>Kerjasama:</strong> Sinergi kolektif dan aliran passing.</li>
+                            <li><strong>Refleks:</strong> Tanggap darurat krisis dan reaksi motorik kilat.</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-block">
+                        <h3>Langkah Penggunaan:</h3>
+                        <ol class="steps-list">
+                            <li>Geser nilai 5 parameter pada panel sebelah kiri (skala 1.0 - 5.0).</li>
+                            <li>Klik tombol <strong>Hitung Prediksi KNN (K=5)</strong>.</li>
+                            <li>Sistem akan mengukur jarak geometris Euclidean ke 32 sampel data latih seimbang.</li>
+                            <li>Hasil klasifikasi, radar chart 5 sumbu, dan berkas laporan analitis akan ditampilkan seketika.</li>
+                        </ol>
+                    </div>
+
+                    <div class="academic-note">
+                        <strong>Standar Integritas Akademik:</strong>
+                        Model dilengkapi mekanisme deterministik <em>Inverse Distance Weighting (IDW)</em> untuk menyelesaikan voting seri (tie-break).
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Script Native Canvas & Export Report -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            {% if inputs and result %}
+            // -------------------------------------------------------------
+            // Render Radar Chart HTML5 Canvas Responsif & Simetris (DPI-Aware)
+            // -------------------------------------------------------------
+            (function renderRadarChart() {
+                const canvas = document.getElementById("radarCanvas");
+                if (!canvas) return;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+
+                // Konfigurasi HiDPI / Retina Screen Scaling
+                const dpr = window.devicePixelRatio || 1;
+                const displaySize = 340;
+
+                canvas.width = displaySize * dpr;
+                canvas.height = displaySize * dpr;
+                canvas.style.width = displaySize + "px";
+                canvas.style.height = displaySize + "px";
+
+                ctx.resetTransform();
+                ctx.scale(dpr, dpr);
+
+                const labels = ["Agresivitas", "Kreativitas", "Disiplin", "Kerjasama", "Refleks"];
+                const values = [
+                    {{ inputs.Agresivitas }},
+                    {{ inputs.Kreativitas }},
+                    {{ inputs.Disiplin }},
+                    {{ inputs.Kerjasama }},
+                    {{ inputs.Refleks }}
+                ];
+
+                const totalAxes = labels.length;
+                const centerX = displaySize / 2;
+                const centerY = displaySize / 2;
+                const maxRadius = 105;
+                const maxVal = 5.0;
+
+                ctx.clearRect(0, 0, displaySize, displaySize);
+
+                // 1. Gambar grid konsentris segi lima (Level 1 sampai 5)
+                for (let level = 1; level <= 5; level++) {
+                    const r = (level / 5) * maxRadius;
+                    ctx.beginPath();
+                    for (let i = 0; i < totalAxes; i++) {
+                        const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                        const x = centerX + r * Math.cos(angle);
+                        const y = centerY + r * Math.sin(angle);
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.strokeStyle = level === 5 ? "#38444d" : "#21262d";
+                    ctx.lineWidth = level === 5 ? 1.5 : 1;
+                    ctx.stroke();
+
+                    // Label angka grid konsentris di sumbu vertikal
+                    ctx.fillStyle = "#484f58";
+                    ctx.font = "9px -apple-system, sans-serif";
+                    ctx.textAlign = "right";
+                    ctx.textBaseline = "bottom";
+                    ctx.fillText(level.toString(), centerX - 4, centerY - r + 3);
+                }
+
+                // 2. Gambar 5 garis sumbu radial dan label nama parameter
+                ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+                for (let i = 0; i < totalAxes; i++) {
+                    const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                    const x = centerX + maxRadius * Math.cos(angle);
+                    const y = centerY + maxRadius * Math.sin(angle);
+
+                    // Garis sumbu
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = "#30363d";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Posisi teks label
+                    const labelRadius = maxRadius + 26;
+                    const lx = centerX + labelRadius * Math.cos(angle);
+                    const ly = centerY + labelRadius * Math.sin(angle);
+
+                    ctx.fillStyle = "#c9d1d9";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(labels[i], lx, ly);
+                }
+
+                // 3. Gambar poligon area data input
+                ctx.beginPath();
+                for (let i = 0; i < totalAxes; i++) {
+                    const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                    const r = (values[i] / maxVal) * maxRadius;
+                    const x = centerX + r * Math.cos(angle);
+                    const y = centerY + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+
+                // Fill poligon dengan gradasi atau warna semitransparan
+                ctx.fillStyle = "rgba(56, 139, 253, 0.35)";
+                ctx.fill();
+                ctx.strokeStyle = "#58a6ff";
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                // 4. Titik koordinat data (Vertex Dots & Skor Angka)
+                for (let i = 0; i < totalAxes; i++) {
+                    const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                    const r = (values[i] / maxVal) * maxRadius;
+                    const x = centerX + r * Math.cos(angle);
+                    const y = centerY + r * Math.sin(angle);
+
+                    // Lingkaran luar titik
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = "#3fb950";
+                    ctx.fill();
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            })();
+            {% endif %}
+        });
+
+        // -------------------------------------------------------------
+        // Fungsi Ekspor Laporan Akademik Lengkap ke Format Dokumen .txt
+        // -------------------------------------------------------------
+        function exportReport() {
+            {% if inputs and result %}
+            const reportText = [
+                "==================================================================",
+                " LAPORAN HASIL PREDIKSI PERAN TAKTIS SEPAK BOLA (PES 2026)",
+                " SISTEM KLASIFIKASI K-NEAREST NEIGHBORS (KNN) DARI DASAR (SCRATCH)",
+                "==================================================================",
+                "Mata Kuliah     : Kecerdasan Artifisial",
+                "Dosen Pengampu  : Pak Kurniawan",
+                "Kelompok        : Kelompok 6 (Wong Urakan)",
+                "Anggota Tim     :",
+                "  1. Ahmad Rizqi Mubarok (NIM: 06.2025.1.07900)",
+                "  2. Wahyu Aditia Putra  (NIM: 06.2025.1.07869)",
+                "Waktu Ekspor    : " + new Date().toLocaleString("id-ID"),
+                "==================================================================",
+                "",
+                "[1] SKOR FITUR KARAKTER INPUT (Skala 1.0 - 5.0):",
+                "  - Agresivitas & Pengambilan Risiko : {{ '%.1f'|format(inputs.Agresivitas) }}",
+                "  - Visi Strategis & Kreativitas     : {{ '%.1f'|format(inputs.Kreativitas) }}",
+                "  - Disiplin Defensif & Kesabaran    : {{ '%.1f'|format(inputs.Disiplin) }}",
+                "  - Kerjasama Tim & Distribusi       : {{ '%.1f'|format(inputs.Kerjasama) }}",
+                "  - Refleks Instan & Tanggap Krisis  : {{ '%.1f'|format(inputs.Refleks) }}",
+                "",
+                "[2] FORMULA & METODOLOGI SCRATCH KNN (ZERO-LIBRARY ML):",
+                "  A. Jarak Euclidean Antar-Vektor:",
+                "     d(p, q) = sqrt( sum_{i=1}^n (p_i - q_i)^2 )",
+                "  B. Voting Mayoritas:",
+                "     y_pred = argmax_{c in C} sum_{i=1}^K I(y_i == c)",
+                "  C. Keyakinan Prediksi (Confidence):",
+                "     Confidence = (Jumlah Suara Pemenang / K) * 100%",
+                "  D. Mekanisme Resolusi Seri (Tie-Break):",
+                "     Inverse Distance Weighting: W(c) = sum( 1 / (d_j + 1e-6) )",
+                "",
+                "[3] HASIL KLASIFIKASI MODEL (K=5):",
+                "  - Prediksi Kategori Peran          : {{ result.role }}",
+                "  - Tingkat Keyakinan (Confidence)   : {{ result.confidence }}%",
+                "  - Status Resolusi Seri (Tie-Break) : {{ 'DISELESAIKAN DENGAN IDW' if result.tie_resolved else 'MAYORITAS MUTLAK (TIDAK SERI)' }}",
+                "  - Rekomendasi Posisi PES 2026      : {{ result.role_pes }}",
+                "  - Pola Formasi Rujukan             : {{ result.formation }}",
+                "  - Filosofi Gaya Bermain (Playstyle): {{ result.playstyle }}",
+                "",
+                "[4] DESKRIPSI ANALITIS KARAKTER:",
+                "  {{ result.desc }}",
+                "",
+                "[5] INSTRUKSI LAPANGAN PES 2026:",
+                "  {{ result.instructions }}",
+                "",
+                "[6] LOG KALKULASI 5 TETANGGA TERDEKAT (K-NEAREST NEIGHBORS):",
+                {% for dist, label in result.neighbors %}
+                "  - Peringkat #{{ loop.index }}: Kelas Latih = {{ '%-12s'|format(label) }} | Jarak Geometris = {{ '%.4f'|format(dist) }}",
+                {% endfor %}
+                "",
+                "==================================================================",
+                "Catatan Akademik: Algoritma dibangun 100% murni tanpa menggunakan",
+                "pustaka pihak ketiga (tanpa Scikit-Learn, Numpy, Pandas, Scipy).",
+                "=================================================================="
+            ].join("\n");
+
+            const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Laporan_Prediksi_Role_PES2026_Kelompok6_WongUrakan.txt";
+            link.click();
+            URL.revokeObjectURL(link.href);
+            {% else %}
+            alert("Belum ada data hasil prediksi untuk diekspor. Silakan lakukan prediksi terlebih dahulu.");
+            {% endif %}
+        }
+    </script>
+</body>
+</html>
+
+</html>
