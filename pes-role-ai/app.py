@@ -1,27 +1,9 @@
-"""
-app.py
-=============================================================================
-BACKEND SERVER FLASK - PES 2026 TACTICAL ROLE PREDICTOR
-Proyek Akademik: PES 2026 Tactical Role Predictor
-Kelompok 6 (Wong Urakan):
-  - Ahmad Rizqi Mubarok (06.2025.1.07900)
-  - Wahyu Aditia Putra  (06.2025.1.07869)
-Mata Kuliah: Kecerdasan Artifisial
-Dosen Pengampu: Pak Kurniawan
-
-Fitur Backend:
-1. Robust Path Configuration (Konsisten dari Root maupun Subfolder).
-2. Zero-Library ML ScratchKNN Inference Engine.
-3. Validasi Ketat Input Form (Numerik, Rentang 1.0 - 5.0, Fallback Default).
-4. Structured Academic Logging di Konsol Terminal.
-=============================================================================
-"""
-
 import logging
 import os
 import sys
-from typing import Any, Dict, List, Optional, Tuple
-from flask import Flask, render_template, request
+from typing import Any
+
+from flask import Flask, jsonify, render_template, request
 
 # Pastikan path absolut konsisten di berbagai level direktori eksekusi
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -57,7 +39,7 @@ logger.info(
 )
 
 # Definisi nama-nama fitur untuk validasi dan logging
-FEATURE_NAMES: List[Tuple[str, str]] = [
+FEATURE_NAMES: list[tuple[str, str]] = [
     ("q1", "Agresivitas"),
     ("q2", "Kreativitas"),
     ("q3", "Disiplin"),
@@ -66,7 +48,9 @@ FEATURE_NAMES: List[Tuple[str, str]] = [
 ]
 
 
-def validate_and_parse_input(raw_value: Optional[str], field_label: str, default_val: float = 3.0) -> float:
+def validate_and_parse_input(
+    raw_value: str | None, field_label: str, default_val: float = 3.0
+) -> float:
     """
     Memvalidasi dan mengonversi nilai input form ke tipe float dalam rentang [1.0, 5.0].
 
@@ -107,15 +91,15 @@ def index():
     - POST: Memvalidasi parameter karakter, mengeksekusi inferensi KNN,
             mencatat log ke terminal, dan merender visualisasi hasil.
     """
-    prediction_result: Optional[Dict[str, Any]] = None
-    input_scores: Optional[Dict[str, float]] = None
-    error_message: Optional[str] = None
+    prediction_result: dict[str, Any] | None = None
+    input_scores: dict[str, float] | None = None
+    error_message: str | None = None
 
     if request.method == "POST":
         try:
             # 1. Parsing dan validasi ketat setiap parameter karakter
-            parsed_scores: Dict[str, float] = {}
-            input_vector: List[float] = []
+            parsed_scores: dict[str, float] = {}
+            input_vector: list[float] = []
 
             for field_key, field_label in FEATURE_NAMES:
                 val = validate_and_parse_input(
@@ -138,29 +122,39 @@ def index():
                 "formation": profile.get("formation", "Formasi Fleksibel"),
                 "playstyle": profile.get("playstyle", "Gaya Main Adaptif"),
                 "desc": profile.get("desc", "Deskripsi profil tidak tersedia."),
-                "instructions": profile.get("instructions", "Instruksi standar lapangan."),
+                "instructions": profile.get(
+                    "instructions", "Instruksi standar lapangan."
+                ),
                 "neighbors": inference["neighbors"],
                 "tie_resolved": inference["tie_resolved"],
                 "vote_counts": inference.get("vote_counts", {}),
             }
 
             # 3. Pencatatan log terstruktur ke terminal
-            logger.info("-----------------------------------------------------------------")
+            logger.info(
+                "-----------------------------------------------------------------"
+            )
             logger.info("INFERENSI PREDIKSI PERAN TAKTIS PES 2026")
             logger.info("Vektor Fitur Input : %s", input_vector)
             logger.info("Skor Parameter     : %s", parsed_scores)
             logger.info(
                 "K-Tetangga (K=%d)  : %s",
                 KNN_K_VALUE,
-                [
-                    f"{label} (d={dist:.4f})"
-                    for dist, label in inference["neighbors"]
-                ],
+                [f"{label} (d={dist:.4f})" for dist, label in inference["neighbors"]],
             )
             logger.info("Distribusi Suara   : %s", inference.get("vote_counts"))
-            logger.info("Resolusi Seri (Tie): %s", "YA (IDW)" if inference["tie_resolved"] else "TIDAK")
-            logger.info("Hasil Prediksi     : %s (Confidence: %.2f%%)", role, inference["confidence"])
-            logger.info("-----------------------------------------------------------------")
+            logger.info(
+                "Resolusi Seri (Tie): %s",
+                "YA (IDW)" if inference["tie_resolved"] else "TIDAK",
+            )
+            logger.info(
+                "Hasil Prediksi     : %s (Confidence: %.2f%%)",
+                role,
+                inference["confidence"],
+            )
+            logger.info(
+                "-----------------------------------------------------------------"
+            )
 
         except ValueError as val_err:
             error_message = str(val_err)
@@ -177,6 +171,91 @@ def index():
     )
 
 
+@app.route("/predict", methods=["POST"])
+def predict():
+    """
+    Endpoint AJAX JSON untuk inferensi prediksi peran taktis PES 2026.
+    Menerima form fields q1-q5 via POST dan mengembalikan hasil prediksi
+    dalam format JSON murni (tanpa render template).
+    """
+    try:
+        # 1. Parsing dan validasi ketat setiap parameter karakter
+        parsed_scores: dict[str, float] = {}
+        input_vector: list[float] = []
+
+        for field_key, field_label in FEATURE_NAMES:
+            val = validate_and_parse_input(
+                request.form.get(field_key), field_label, default_val=3.0
+            )
+            parsed_scores[field_label] = val
+            input_vector.append(val)
+
+        # 2. Eksekusi inferensi K-Nearest Neighbors mandiri
+        inference = knn_classifier.predict(input_vector)
+        role = inference["predicted_role"]
+        profile = TACTICAL_PROFILES.get(role, {})
+
+        # 3. Pencatatan log terstruktur ke terminal
+        logger.info(
+            "-----------------------------------------------------------------"
+        )
+        logger.info("INFERENSI PREDIKSI PERAN TAKTIS PES 2026 (JSON API)")
+        logger.info("Vektor Fitur Input : %s", input_vector)
+        logger.info("Skor Parameter     : %s", parsed_scores)
+        logger.info(
+            "K-Tetangga (K=%d)  : %s",
+            KNN_K_VALUE,
+            [f"{label} (d={dist:.4f})" for dist, label in inference["neighbors"]],
+        )
+        logger.info("Distribusi Suara   : %s", inference.get("vote_counts"))
+        logger.info(
+            "Resolusi Seri (Tie): %s",
+            "YA (IDW)" if inference["tie_resolved"] else "TIDAK",
+        )
+        logger.info(
+            "Hasil Prediksi     : %s (Confidence: %.2f%%)",
+            role,
+            inference["confidence"],
+        )
+        logger.info(
+            "-----------------------------------------------------------------"
+        )
+
+        # 4. Bangun response JSON
+        return jsonify(
+            {
+                "success": True,
+                "role": role,
+                "confidence": inference["confidence"],
+                "role_pes": profile.get("role_pes", "Peran Taktis Dinamis"),
+                "formation": profile.get("formation", "Formasi Fleksibel"),
+                "playstyle": profile.get("playstyle", "Gaya Main Adaptif"),
+                "desc": profile.get("desc", "Deskripsi profil tidak tersedia."),
+                "instructions": profile.get(
+                    "instructions", "Instruksi standar lapangan."
+                ),
+                "tie_resolved": inference["tie_resolved"],
+                "vote_counts": inference.get("vote_counts", {}),
+                "neighbors": [
+                    {"rank": i + 1, "label": label, "distance": round(dist, 4)}
+                    for i, (dist, label) in enumerate(inference["neighbors"])
+                ],
+                "inputs": parsed_scores,
+            }
+        )
+
+    except ValueError as val_err:
+        error_msg = str(val_err)
+        logger.warning("Validasi input gagal (JSON API): %s", error_msg)
+        return jsonify({"success": False, "error": error_msg}), 400
+    except Exception as err:
+        error_msg = f"Terjadi kesalahan internal pada sistem inferensi: {err}"
+        logger.exception("Pengecualian tak terduga pada server backend (JSON API):")
+        return jsonify({"success": False, "error": error_msg}), 500
+
+
 if __name__ == "__main__":
-    logger.info("Server web PES 2026 Tactical Role Predictor siap dijalankan di http://127.0.0.1:5000")
+    logger.info(
+        "Server web PES 2026 Tactical Role Predictor siap dijalankan di http://127.0.0.1:5000"
+    )
     app.run(debug=True, host="127.0.0.1", port=5000)

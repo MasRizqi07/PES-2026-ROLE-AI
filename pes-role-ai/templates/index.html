@@ -5,14 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PES 2026 Tactical Role Predictor - Kelompok 6: Wong Urakan</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <noscript>
+        <style>
+            {% if result and not result.error %}
+            .card-flipper { transform: rotateY(180deg) !important; }
+            .card-front { display: none !important; }
+            .card-back { position: relative !important; transform: none !important; }
+            {% endif %}
+        </style>
+    </noscript>
 </head>
-<body>
+<body data-theme="dark">
+    <!-- Module 1: Particle Background Canvas -->
+    <canvas id="particleBg"></canvas>
+
+    <!-- Module 8: Theme Toggle Button -->
+    <button class="theme-toggle" id="themeToggle" title="Ganti tema terang/gelap" aria-label="Toggle theme">🌙</button>
+
     <div class="container">
         <!-- Header Proyek Akademik -->
-        <header>
+        <header class="animate-fadein">
             <div class="project-tag">PROYEK AKADEMIK KECERDASAN ARTIFISIAL</div>
             <h1>PES 2026 Tactical Role Predictor</h1>
-            <p class="subtitle">Engine Klasifikasi Karakter & Peran Taktis Berbasis Algoritma Scratch K-Nearest Neighbors</p>
+            <p class="subtitle">Engine Klasifikasi Karakter &amp; Peran Taktis Berbasis Algoritma Scratch K-Nearest Neighbors</p>
             <div class="badge-team">
                 <span class="group-title">Kelompok 6: Wong Urakan</span>
                 <span class="separator">•</span>
@@ -24,9 +39,9 @@
             </div>
         </header>
 
-        <!-- Banner Error Validasi (Jika Terjadi) -->
+        <!-- Banner Error Validasi (Server-Side Fallback) -->
         {% if error %}
-        <div class="alert alert-error">
+        <div class="alert alert-error animate-fadein">
             <div class="alert-icon">⚠️</div>
             <div class="alert-content">
                 <strong>Kesalahan Validasi Input:</strong>
@@ -36,8 +51,9 @@
         {% endif %}
 
         <main class="grid-layout">
-            <!-- Kolom Kiri: Formulir Input Parameter Karakter -->
-            <section class="card form-card">
+            <!-- LEFT: Form Card (with glassmorphism & 3D tilt) -->
+            <section class="card glass form-card tilt-card animate-fadein">
+                <div class="tilt-glare"></div>
                 <div class="card-header">
                     <h2>Parameter Karakter Pemain</h2>
                     <span class="badge-scale">Skala 1.0 - 5.0</span>
@@ -47,335 +63,819 @@
                 <form method="POST" action="/" id="predictionForm">
                     <div class="form-group">
                         <div class="label-row">
-                            <label for="q1">1. Agresivitas & Risiko</label>
+                            <label for="q1">1. Agresivitas &amp; Risiko</label>
                             <span class="slider-val" id="val_q1">{{ "%.1f"|format(inputs.Agresivitas) if inputs else "3.0" }}</span>
                         </div>
                         <span class="field-desc">Kecenderungan menekan, duel fisik, dan keberanian mengambil risiko tinggi (FPS, Olahraga Ekstrem).</span>
                         <input type="range" id="q1" name="q1" min="1" max="5" step="0.5"
                                value="{{ inputs.Agresivitas if inputs else 3.0 }}"
-                               oninput="document.getElementById('val_q1').innerText = parseFloat(this.value).toFixed(1)">
+                               oninput="document.getElementById('val_q1').innerText = parseFloat(this.value).toFixed(1); updateLiveRadar();">
                     </div>
 
                     <div class="form-group">
                         <div class="label-row">
-                            <label for="q2">2. Visi Strategis & Kreativitas</label>
+                            <label for="q2">2. Visi Strategis &amp; Kreativitas</label>
                             <span class="slider-val" id="val_q2">{{ "%.1f"|format(inputs.Kreativitas) if inputs else "3.0" }}</span>
                         </div>
                         <span class="field-desc">Imajinasi spasial, antisipasi langkah lawan, dan variasi solusi kreatif (Catur, Puzzle, Desain).</span>
                         <input type="range" id="q2" name="q2" min="1" max="5" step="0.5"
                                value="{{ inputs.Kreativitas if inputs else 3.0 }}"
-                               oninput="document.getElementById('val_q2').innerText = parseFloat(this.value).toFixed(1)">
+                               oninput="document.getElementById('val_q2').innerText = parseFloat(this.value).toFixed(1); updateLiveRadar();">
                     </div>
 
                     <div class="form-group">
                         <div class="label-row">
-                            <label for="q3">3. Disiplin Defensif & Kesabaran</label>
+                            <label for="q3">3. Disiplin Defensif &amp; Kesabaran</label>
                             <span class="slider-val" id="val_q3">{{ "%.1f"|format(inputs.Disiplin) if inputs else "3.0" }}</span>
                         </div>
                         <span class="field-desc">Kepatuhan posisi zona, ketahanan mental, dan kalkulasi risiko (Membaca, Analisis Data, Koleksi).</span>
                         <input type="range" id="q3" name="q3" min="1" max="5" step="0.5"
                                value="{{ inputs.Disiplin if inputs else 3.0 }}"
-                               oninput="document.getElementById('val_q3').innerText = parseFloat(this.value).toFixed(1)">
+                               oninput="document.getElementById('val_q3').innerText = parseFloat(this.value).toFixed(1); updateLiveRadar();">
                     </div>
 
                     <div class="form-group">
                         <div class="label-row">
-                            <label for="q4">4. Kerjasama Tim & Distribusi</label>
+                            <label for="q4">4. Kerjasama Tim &amp; Distribusi</label>
                             <span class="slider-val" id="val_q4">{{ "%.1f"|format(inputs.Kerjasama) if inputs else "3.0" }}</span>
                         </div>
                         <span class="field-desc">Kolektivitas, komunikasi harmonis, dan mengutamakan progresi tim (Game Co-op, Organisasi).</span>
                         <input type="range" id="q4" name="q4" min="1" max="5" step="0.5"
                                value="{{ inputs.Kerjasama if inputs else 3.0 }}"
-                               oninput="document.getElementById('val_q4').innerText = parseFloat(this.value).toFixed(1)">
+                               oninput="document.getElementById('val_q4').innerText = parseFloat(this.value).toFixed(1); updateLiveRadar();">
                     </div>
 
                     <div class="form-group">
                         <div class="label-row">
-                            <label for="q5">5. Refleks Instan & Tanggap Krisis</label>
+                            <label for="q5">5. Refleks Instan &amp; Tanggap Krisis</label>
                             <span class="slider-val" id="val_q5">{{ "%.1f"|format(inputs.Refleks) if inputs else "3.0" }}</span>
                         </div>
                         <span class="field-desc">Kecepatan motorik merespons stimulasi mendadak dan penyelamatan darurat (Tenis Meja, Reaksi Cepat).</span>
                         <input type="range" id="q5" name="q5" min="1" max="5" step="0.5"
                                value="{{ inputs.Refleks if inputs else 3.0 }}"
-                               oninput="document.getElementById('val_q5').innerText = parseFloat(this.value).toFixed(1)">
+                               oninput="document.getElementById('val_q5').innerText = parseFloat(this.value).toFixed(1); updateLiveRadar();">
                     </div>
 
-                    <button type="submit" class="btn-submit">
-                        <span class="btn-text">Hitung Prediksi KNN (K=5)</span>
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span class="btn-text">⚡ Analisis Prediksi KNN</span>
                     </button>
                 </form>
             </section>
 
-            <!-- Kolom Kanan: Panel Hasil Inferensi atau Panduan Sistem (State GET) -->
-            {% if result and not result.error %}
-            <section class="card result-card">
-                <div class="result-header">
-                    <div>
-                        <h2>Hasil Analisis Peran Taktis</h2>
-                        <span class="model-badge">Engine: Scratch KNN (Euclidean)</span>
-                    </div>
-                    <button type="button" class="btn-export" onclick="exportReport()" title="Unduh arsip laporan akademik (.txt)">
-                        📄 Unduh Laporan (.txt)
-                    </button>
-                </div>
-
-                <div class="role-summary-banner">
-                    <div class="role-main">
-                        <span class="role-badge role-{{ result.role|lower }}">{{ result.role }}</span>
-                        {% if result.tie_resolved %}
-                        <span class="tie-badge" title="Kondisi suara seri dipecahkan melalui Inverse Distance Weighting">Tie-Break: IDW Resolved</span>
-                        {% endif %}
-                    </div>
-                    <div class="confidence-container">
-                        <div class="confidence-label">
-                            <span>Tingkat Keyakinan (Confidence):</span>
-                            <strong>{{ result.confidence }}%</strong>
+            <!-- RIGHT: Result Panel with 3D Card Flip -->
+            <section class="card-flip-container animate-fadein delay-1">
+                <div class="card-flipper" id="resultFlipper">
+                    <!-- FRONT: Live Radar Preview (always visible initially) -->
+                    <div class="card-front card glass">
+                        <div class="preview-header">
+                            <h2>Live Radar Preview</h2>
+                            <span class="model-badge">Real-Time Canvas</span>
                         </div>
-                        <div class="confidence-track">
-                            <div class="confidence-fill" style="width: {{ result.confidence }}%;"></div>
+                        <div class="chart-wrapper">
+                            <canvas id="radarCanvas" width="340" height="340"></canvas>
+                        </div>
+                        <div class="empty-body">
+                            <div class="info-block">
+                                <h3>Panduan Eksplorasi Cepat:</h3>
+                                <ol class="steps-list">
+                                    <li>Sesuaikan 5 slider parameter di sebelah kiri.</li>
+                                    <li>Grafik radar di atas berubah seketika secara dinamis.</li>
+                                    <li>Tekan <strong>⚡ Analisis Prediksi KNN</strong> untuk klasifikasi AI.</li>
+                                    <li>Panel akan berputar 3D memperlihatkan analisis taktis lengkap.</li>
+                                </ol>
+                            </div>
+                            <div class="academic-note">
+                                <strong>Engine:</strong> Scratch K-Nearest Neighbors (K=5) &bull; Euclidean Geometry &bull; Deterministic IDW Tie-Break
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Radar Canvas Beresolusi Tinggi -->
-                <div class="chart-wrapper">
-                    <canvas id="radarCanvas" width="340" height="340"></canvas>
-                </div>
+                    <!-- BACK: Full Result (revealed after prediction via AJAX or server-side) -->
+                    <div class="card-back card glass result-card" id="resultPanel">
+                        <div id="resultContent">
+                            {% if result and not result.error %}
+                            <!-- Server-side Fallback Rendering -->
+                            <div class="result-header">
+                                <div>
+                                    <h2>Hasil Analisis Peran Taktis</h2>
+                                    <span class="model-badge">Engine: Scratch KNN (Euclidean)</span>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button type="button" class="btn-export" onclick="unflipCard()" title="Kembali ke Live Preview">
+                                        ↺ Live Preview
+                                    </button>
+                                    <button type="button" class="btn-export" onclick="exportReport()" title="Unduh arsip laporan akademik (.txt)">
+                                        📄 Unduh Laporan (.txt)
+                                    </button>
+                                </div>
+                            </div>
 
-                <!-- Rincian Karakteristik Taktik PES 2026 -->
-                <div class="specs-grid">
-                    <div class="spec-item">
-                        <span class="spec-label">Rekomendasi Role PES 2026:</span>
-                        <span class="spec-value highlight">{{ result.role_pes }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <span class="spec-label">Formasi Ideal:</span>
-                        <span class="spec-value">{{ result.formation }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <span class="spec-label">Gaya Bermain Taktis:</span>
-                        <span class="spec-value">{{ result.playstyle }}</span>
-                    </div>
-                </div>
+                            <div class="role-summary-banner">
+                                <div class="role-main">
+                                    <span class="role-badge role-{{ result.role|lower }}">{{ result.role }}</span>
+                                    {% if result.tie_resolved %}
+                                    <span class="tie-badge" title="Kondisi suara seri dipecahkan melalui Inverse Distance Weighting">Tie-Break: IDW Resolved</span>
+                                    {% endif %}
+                                </div>
+                                <div class="confidence-container">
+                                    <div class="confidence-label">
+                                        <span>Tingkat Keyakinan (Confidence):</span>
+                                        <strong class="confidence-value">{{ result.confidence }}%</strong>
+                                    </div>
+                                    <div class="confidence-track">
+                                        <div class="confidence-fill" style="width: {{ result.confidence }}%;"></div>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div class="desc-box">
-                    <strong>Karakteristik Taktikal:</strong>
-                    <p>{{ result.desc }}</p>
-                </div>
+                            <div class="chart-wrapper">
+                                <canvas id="resultRadar" width="340" height="340"></canvas>
+                            </div>
 
-                <div class="instructions-box">
-                    <strong>Instruksi Lapangan PES 2026:</strong>
-                    <p>{{ result.instructions }}</p>
-                </div>
+                            <div class="specs-grid">
+                                <div class="spec-item">
+                                    <span class="spec-label">Rekomendasi Role PES 2026:</span>
+                                    <span class="spec-value highlight">{{ result.role_pes }}</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Formasi Ideal:</span>
+                                    <span class="spec-value">{{ result.formation }}</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Gaya Bermain Taktis:</span>
+                                    <span class="spec-value">{{ result.playstyle }}</span>
+                                </div>
+                            </div>
 
-                <!-- Log K-Tetangga Terdekat -->
-                <div class="neighbors-section">
-                    <h3>Log 5 Tetangga Terdekat (K=5):</h3>
-                    <div class="neighbor-table-wrapper">
-                        <table class="neighbor-table" id="neighborLogTable">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Label Sampel Latih</th>
-                                    <th>Jarak Euclidean</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for dist, label in result.neighbors %}
-                                <tr>
-                                    <td>#{{ loop.index }}</td>
-                                    <td><span class="pill pill-{{ label|lower }}">{{ label }}</span></td>
-                                    <td><code>{{ "%.4f"|format(dist) }}</code></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                            <div class="desc-box">
+                                <strong>Karakteristik Taktikal:</strong>
+                                <p>{{ result.desc }}</p>
+                            </div>
+
+                            <div class="instructions-box">
+                                <strong>Instruksi Lapangan PES 2026:</strong>
+                                <p>{{ result.instructions }}</p>
+                            </div>
+
+                            <div class="neighbors-section">
+                                <h3>Log 5 Tetangga Terdekat (K=5):</h3>
+                                <div class="neighbor-table-wrapper">
+                                    <table class="neighbor-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Label Sampel Latih</th>
+                                                <th>Jarak Euclidean</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for dist, label in result.neighbors %}
+                                            <tr>
+                                                <td>#{{ loop.index }}</td>
+                                                <td><span class="pill pill-{{ label|lower }}">{{ label }}</span></td>
+                                                <td><code>{{ "%.4f"|format(dist) }}</code></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </section>
-
-            {% else %}
-            <!-- Panduan Sistem (Tampilan Default Mode GET) -->
-            <section class="card empty-card">
-                <div class="empty-header">
-                    <div class="empty-icon">⚽</div>
-                    <h2>Sistem Prediksi Taktik PES 2026</h2>
-                    <p class="empty-subtitle">Klasifikasi Posisi Berbasis Algoritma Scratch K-Nearest Neighbors (K=5)</p>
-                </div>
-
-                <div class="empty-body">
-                    <div class="info-block">
-                        <h3>Prinsip Kerja Algoritma (Zero-Library ML):</h3>
-                        <p>
-                            Aplikasi ini dibangun murni tanpa pustaka machine learning pihak ketiga (tanpa Scikit-Learn, Numpy, Scipy).
-                            Karakteristik pengguna dipetakan ke dalam ruang vektor berdimensi 5:
-                        </p>
-                        <ul class="dimension-list">
-                            <li><strong>Agresivitas:</strong> Nilai instingtif penyerangan dan risiko.</li>
-                            <li><strong>Kreativitas:</strong> Kemampuan membuka ruang dan visi distribusi.</li>
-                            <li><strong>Disiplin:</strong> Kepatuhan bertahan dan penjagaan zonal.</li>
-                            <li><strong>Kerjasama:</strong> Sinergi kolektif dan aliran passing.</li>
-                            <li><strong>Refleks:</strong> Tanggap darurat krisis dan reaksi motorik kilat.</li>
-                        </ul>
-                    </div>
-
-                    <div class="info-block">
-                        <h3>Langkah Penggunaan:</h3>
-                        <ol class="steps-list">
-                            <li>Geser nilai 5 parameter pada panel sebelah kiri (skala 1.0 - 5.0).</li>
-                            <li>Klik tombol <strong>Hitung Prediksi KNN (K=5)</strong>.</li>
-                            <li>Sistem akan mengukur jarak geometris Euclidean ke 32 sampel data latih seimbang.</li>
-                            <li>Hasil klasifikasi, radar chart 5 sumbu, dan berkas laporan analitis akan ditampilkan seketika.</li>
-                        </ol>
-                    </div>
-
-                    <div class="academic-note">
-                        <strong>Standar Integritas Akademik:</strong>
-                        Model dilengkapi mekanisme deterministik <em>Inverse Distance Weighting (IDW)</em> untuk menyelesaikan voting seri (tie-break).
-                    </div>
-                </div>
-            </section>
-            {% endif %}
         </main>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+            <p>&copy; 2026 Kelompok 6: Wong Urakan &mdash; Ahmad Rizqi Mubarok &amp; Wahyu Aditia Putra</p>
+            <p>Mata Kuliah Kecerdasan Artifisial | Dosen: Pak Kurniawan</p>
+            <p class="footer-links"><a href="https://github.com/MasRizqi07/PES-2026-ROLE-AI" target="_blank" rel="noopener noreferrer">GitHub Repository</a></p>
+        </footer>
     </div>
 
-    <!-- Script Native Canvas & Export Report -->
+    <!-- ALL JAVASCRIPT MODULES IN ONE INTEGRATED SCRIPT -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            {% if inputs and result %}
-            // -------------------------------------------------------------
-            // Render Radar Chart HTML5 Canvas Responsif & Simetris (DPI-Aware)
-            // -------------------------------------------------------------
-            (function renderRadarChart() {
-                const canvas = document.getElementById("radarCanvas");
+    (function () {
+        "use strict";
+
+        // =====================================================================
+        // State Store
+        // =====================================================================
+        var lastPrediction = null;
+        var RADAR_LABELS = ["Agresivitas", "Kreativitas", "Disiplin", "Kerjasama", "Refleks"];
+
+        // =====================================================================
+        // MODULE 1 — Particle Background
+        // =====================================================================
+        var ParticleField = (function () {
+            var canvas, ctx, particles, W, H, animId;
+            var BASE_COUNT = 70;
+            var MOBILE_COUNT = 35;
+            var CONNECT_DIST = 120;
+
+            function Particle() {
+                this.x = Math.random() * W;
+                this.y = Math.random() * H;
+                this.vx = (Math.random() - 0.5) * 0.6; // -0.3 to 0.3
+                this.vy = (Math.random() - 0.5) * 0.6;
+                this.r = 1 + Math.random() * 2;
+                this.color = Math.random() > 0.5
+                    ? "rgba(88,166,255,0.5)"
+                    : "rgba(63,185,80,0.4)";
+            }
+
+            function init() {
+                canvas = document.getElementById("particleBg");
                 if (!canvas) return;
-                const ctx = canvas.getContext("2d");
-                if (!ctx) return;
+                ctx = canvas.getContext("2d");
+                resize();
+                window.addEventListener("resize", resize);
+                loop();
+            }
 
-                // Konfigurasi HiDPI / Retina Screen Scaling
-                const dpr = window.devicePixelRatio || 1;
-                const displaySize = 340;
+            function resize() {
+                W = window.innerWidth;
+                H = window.innerHeight;
+                canvas.width = W;
+                canvas.height = H;
+                var count = W < 768 ? MOBILE_COUNT : BASE_COUNT;
+                particles = [];
+                for (var i = 0; i < count; i++) {
+                    particles.push(new Particle());
+                }
+            }
 
-                canvas.width = displaySize * dpr;
-                canvas.height = displaySize * dpr;
-                canvas.style.width = displaySize + "px";
-                canvas.style.height = displaySize + "px";
+            function loop() {
+                ctx.clearRect(0, 0, W, H);
+                for (var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > W) p.vx *= -1;
+                    if (p.y < 0 || p.y > H) p.vy *= -1;
 
-                ctx.resetTransform();
-                ctx.scale(dpr, dpr);
-
-                const labels = ["Agresivitas", "Kreativitas", "Disiplin", "Kerjasama", "Refleks"];
-                const values = [
-                    {{ inputs.Agresivitas }},
-                    {{ inputs.Kreativitas }},
-                    {{ inputs.Disiplin }},
-                    {{ inputs.Kerjasama }},
-                    {{ inputs.Refleks }}
-                ];
-
-                const totalAxes = labels.length;
-                const centerX = displaySize / 2;
-                const centerY = displaySize / 2;
-                const maxRadius = 105;
-                const maxVal = 5.0;
-
-                ctx.clearRect(0, 0, displaySize, displaySize);
-
-                // 1. Gambar grid konsentris segi lima (Level 1 sampai 5)
-                for (let level = 1; level <= 5; level++) {
-                    const r = (level / 5) * maxRadius;
                     ctx.beginPath();
-                    for (let i = 0; i < totalAxes; i++) {
-                        const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
-                        const x = centerX + r * Math.cos(angle);
-                        const y = centerY + r * Math.sin(angle);
-                        if (i === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+
+                    // Connecting lines between particles within 120px
+                    for (var j = i + 1; j < particles.length; j++) {
+                        var q = particles[j];
+                        var dx = p.x - q.x;
+                        var dy = p.y - q.y;
+                        var dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < CONNECT_DIST) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(q.x, q.y);
+                            var alpha = (1 - dist / CONNECT_DIST) * 0.25;
+                            ctx.strokeStyle = "rgba(88,166,255," + alpha + ")";
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
                     }
-                    ctx.closePath();
-                    ctx.strokeStyle = level === 5 ? "#38444d" : "#21262d";
-                    ctx.lineWidth = level === 5 ? 1.5 : 1;
-                    ctx.stroke();
-
-                    // Label angka grid konsentris di sumbu vertikal
-                    ctx.fillStyle = "#484f58";
-                    ctx.font = "9px -apple-system, sans-serif";
-                    ctx.textAlign = "right";
-                    ctx.textBaseline = "bottom";
-                    ctx.fillText(level.toString(), centerX - 4, centerY - r + 3);
                 }
+                animId = requestAnimationFrame(loop);
+            }
 
-                // 2. Gambar 5 garis sumbu radial dan label nama parameter
-                ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-                for (let i = 0; i < totalAxes; i++) {
-                    const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
-                    const x = centerX + maxRadius * Math.cos(angle);
-                    const y = centerY + maxRadius * Math.sin(angle);
+            return { init: init };
+        })();
 
-                    // Garis sumbu
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY);
-                    ctx.lineTo(x, y);
-                    ctx.strokeStyle = "#30363d";
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
+        // =====================================================================
+        // Helper: Slider Values
+        // =====================================================================
+        function getSliderValues() {
+            var q1 = document.getElementById("q1");
+            var q2 = document.getElementById("q2");
+            var q3 = document.getElementById("q3");
+            var q4 = document.getElementById("q4");
+            var q5 = document.getElementById("q5");
 
-                    // Posisi teks label
-                    const labelRadius = maxRadius + 26;
-                    const lx = centerX + labelRadius * Math.cos(angle);
-                    const ly = centerY + labelRadius * Math.sin(angle);
+            return [
+                q1 ? parseFloat(q1.value) || 3.0 : 3.0,
+                q2 ? parseFloat(q2.value) || 3.0 : 3.0,
+                q3 ? parseFloat(q3.value) || 3.0 : 3.0,
+                q4 ? parseFloat(q4.value) || 3.0 : 3.0,
+                q5 ? parseFloat(q5.value) || 3.0 : 3.0
+            ];
+        }
 
-                    ctx.fillStyle = "#c9d1d9";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText(labels[i], lx, ly);
-                }
+        // =====================================================================
+        // MODULE 3 — Live Radar Drawing (DPI-Aware, Responsive & Animated)
+        // =====================================================================
+        function drawRadarStatic(canvas, ctx, values, opts) {
+            var fillColor = opts.fillColor || "rgba(139,148,158,0.12)";
+            var strokeColor = opts.strokeColor || "rgba(139,148,158,0.35)";
+            var dotColor = opts.dotColor || "rgba(139,148,158,0.5)";
 
-                // 3. Gambar poligon area data input
+            // HiDPI Scaling
+            var dpr = window.devicePixelRatio || 1;
+            var parentW = canvas.parentElement ? canvas.parentElement.clientWidth : 340;
+            var displaySize = Math.min(340, parentW > 60 ? parentW : 340);
+            if (displaySize < 240) displaySize = 240;
+
+            canvas.width = displaySize * dpr;
+            canvas.height = displaySize * dpr;
+            canvas.style.width = displaySize + "px";
+            canvas.style.height = displaySize + "px";
+
+            ctx.resetTransform();
+            ctx.scale(dpr, dpr);
+
+            var totalAxes = RADAR_LABELS.length;
+            var cx = displaySize / 2;
+            var cy = displaySize / 2;
+            var maxRadius = (displaySize / 340) * 105;
+            var maxVal = 5.0;
+
+            ctx.clearRect(0, 0, displaySize, displaySize);
+
+            // Theme-aware palette
+            var isDark = document.body.getAttribute("data-theme") !== "light";
+            var gridOuter = isDark ? "#38444d" : "#c0c8d0";
+            var gridInner = isDark ? "#21262d" : "#e2e6ea";
+            var axisLine = isDark ? "#30363d" : "#d0d7de";
+            var gridNumColor = isDark ? "#484f58" : "#8b949e";
+            var labelColor = isDark ? "#c9d1d9" : "#24292f";
+
+            // 1. Concentric Pentagons (1 - 5)
+            for (var level = 1; level <= 5; level++) {
+                var r = (level / 5) * maxRadius;
                 ctx.beginPath();
-                for (let i = 0; i < totalAxes; i++) {
-                    const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
-                    const r = (values[i] / maxVal) * maxRadius;
-                    const x = centerX + r * Math.cos(angle);
-                    const y = centerY + r * Math.sin(angle);
+                for (var i = 0; i < totalAxes; i++) {
+                    var angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                    var x = cx + r * Math.cos(angle);
+                    var y = cy + r * Math.sin(angle);
                     if (i === 0) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
                 ctx.closePath();
-
-                // Fill poligon dengan gradasi atau warna semitransparan
-                ctx.fillStyle = "rgba(56, 139, 253, 0.35)";
-                ctx.fill();
-                ctx.strokeStyle = "#58a6ff";
-                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = level === 5 ? gridOuter : gridInner;
+                ctx.lineWidth = level === 5 ? 1.5 : 1;
                 ctx.stroke();
 
-                // 4. Titik koordinat data (Vertex Dots & Skor Angka)
-                for (let i = 0; i < totalAxes; i++) {
-                    const angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
-                    const r = (values[i] / maxVal) * maxRadius;
-                    const x = centerX + r * Math.cos(angle);
-                    const y = centerY + r * Math.sin(angle);
+                // Concentric level scale indicators
+                ctx.fillStyle = gridNumColor;
+                ctx.font = "9px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+                ctx.textAlign = "right";
+                ctx.textBaseline = "bottom";
+                ctx.fillText(level.toString(), cx - 4, cy - r + 3);
+            }
 
-                    // Lingkaran luar titik
-                    ctx.beginPath();
-                    ctx.arc(x, y, 5, 0, Math.PI * 2);
-                    ctx.fillStyle = "#3fb950";
-                    ctx.fill();
-                    ctx.strokeStyle = "#ffffff";
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
+            // 2. Radial Axis Lines & Labels
+            ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            for (var i = 0; i < totalAxes; i++) {
+                var angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                var ex = cx + maxRadius * Math.cos(angle);
+                var ey = cy + maxRadius * Math.sin(angle);
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ex, ey);
+                ctx.strokeStyle = axisLine;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                var labelR = maxRadius + 24;
+                var lx = cx + labelR * Math.cos(angle);
+                var ly = cy + labelR * Math.sin(angle);
+                ctx.fillStyle = labelColor;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(RADAR_LABELS[i], lx, ly);
+            }
+
+            // 3. Data Area Polygon
+            ctx.beginPath();
+            for (var i = 0; i < totalAxes; i++) {
+                var angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                var val = Math.max(0, Math.min(maxVal, values[i] || 0));
+                var rv = (val / maxVal) * maxRadius;
+                var px = cx + rv * Math.cos(angle);
+                var py = cy + rv * Math.sin(angle);
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // 4. Data Vertex Dots
+            for (var i = 0; i < totalAxes; i++) {
+                var angle = (Math.PI * 2 / totalAxes) * i - (Math.PI / 2);
+                var val = Math.max(0, Math.min(maxVal, values[i] || 0));
+                var rv = (val / maxVal) * maxRadius;
+                var px = cx + rv * Math.cos(angle);
+                var py = cy + rv * Math.sin(angle);
+
+                ctx.beginPath();
+                ctx.arc(px, py, 5, 0, Math.PI * 2);
+                ctx.fillStyle = dotColor;
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        function drawRadar(canvasId, values, options) {
+            var canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            var ctx = canvas.getContext("2d");
+            if (!ctx) return;
+
+            var opts = options || {};
+            var animated = opts.animated || false;
+
+            if (animated) {
+                var startTime = null;
+                var duration = 500;
+                function animStep(ts) {
+                    if (!startTime) startTime = ts;
+                    var progress = Math.min((ts - startTime) / duration, 1);
+                    var ease = 1 - Math.pow(1 - progress, 3);
+                    var currVals = values.map(function (v) { return v * ease; });
+                    drawRadarStatic(canvas, ctx, currVals, opts);
+                    if (progress < 1) {
+                        requestAnimationFrame(animStep);
+                    }
                 }
-            })();
-            {% endif %}
-        });
+                requestAnimationFrame(animStep);
+            } else {
+                drawRadarStatic(canvas, ctx, values, opts);
+            }
+        }
 
-        // -------------------------------------------------------------
-        // Fungsi Ekspor Laporan Akademik Lengkap ke Format Dokumen .txt
-        // -------------------------------------------------------------
-        function exportReport() {
-            {% if inputs and result %}
-            const reportText = [
+        // Live Radar Preview Caller (exposed globally for oninput)
+        window.updateLiveRadar = function () {
+            var vals = getSliderValues();
+            drawRadar("radarCanvas", vals, {
+                fillColor: "rgba(139,148,158,0.12)",
+                strokeColor: "rgba(139,148,158,0.35)",
+                dotColor: "rgba(139,148,158,0.5)",
+                animated: false
+            });
+        };
+
+        // =====================================================================
+        // MODULE 4 — 3D Card Flip
+        // =====================================================================
+        window.flipCard = function () {
+            var flipper = document.getElementById("resultFlipper");
+            var container = document.querySelector(".card-flip-container");
+            var cardBack = document.querySelector(".card-back");
+            if (flipper) {
+                flipper.classList.add("flipped");
+                setTimeout(function () {
+                    if (cardBack && container) {
+                        var h = cardBack.scrollHeight || cardBack.offsetHeight;
+                        if (h > 820) {
+                            container.style.minHeight = (h + 30) + "px";
+                            flipper.style.minHeight = (h + 30) + "px";
+                        }
+                    }
+                }, 100);
+            }
+        };
+
+        window.unflipCard = function () {
+            var flipper = document.getElementById("resultFlipper");
+            var container = document.querySelector(".card-flip-container");
+            if (flipper) {
+                flipper.classList.remove("flipped");
+                flipper.style.minHeight = "";
+            }
+            if (container) {
+                container.style.minHeight = "";
+            }
+            updateLiveRadar();
+        };
+
+        // =====================================================================
+        // MODULE 5 — Micro-Interactions: Button Ripple
+        // =====================================================================
+        function initRipple() {
+            var btn = document.getElementById("submitBtn");
+            if (!btn) return;
+            btn.addEventListener("click", function (e) {
+                var rect = btn.getBoundingClientRect();
+                var ripple = document.createElement("span");
+                ripple.className = "ripple";
+                var size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + "px";
+                ripple.style.left = (e.clientX - rect.left - size / 2) + "px";
+                ripple.style.top = (e.clientY - rect.top - size / 2) + "px";
+                btn.appendChild(ripple);
+                setTimeout(function () {
+                    ripple.remove();
+                }, 600);
+            });
+        }
+
+        // =====================================================================
+        // MODULE 6 — Animated Counter
+        // =====================================================================
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function animateCounter(element, target, duration) {
+            duration = duration || 1500;
+            var start = null;
+            function step(ts) {
+                if (!start) start = ts;
+                var progress = Math.min((ts - start) / duration, 1);
+                var current = Math.round(easeOutCubic(progress) * target);
+                element.textContent = current + "%";
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // =====================================================================
+        // MODULE 7 — 3D Tilt Effect
+        // =====================================================================
+        function initTilt() {
+            // Disable on touch devices
+            if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
+
+            var cards = document.querySelectorAll(".tilt-card");
+            cards.forEach(function (card) {
+                if (card._tiltAttached) return;
+                card._tiltAttached = true;
+
+                card.addEventListener("mousemove", function (e) {
+                    var rect = card.getBoundingClientRect();
+                    var x = e.clientX - rect.left;
+                    var y = e.clientY - rect.top;
+                    var halfW = rect.width / 2;
+                    var halfH = rect.height / 2;
+                    var rotateY = ((x - halfW) / halfW) * 8;
+                    var rotateX = ((halfH - y) / halfH) * 8;
+                    card.style.transform = "perspective(1000px) rotateX(" + rotateX.toFixed(2) + "deg) rotateY(" + rotateY.toFixed(2) + "deg)";
+
+                    var glare = card.querySelector(".tilt-glare");
+                    if (glare) {
+                        var gx = (x / rect.width) * 100;
+                        var gy = (y / rect.height) * 100;
+                        glare.style.background = "radial-gradient(circle at " + gx + "% " + gy + "%, rgba(255,255,255,0.12) 0%, transparent 60%)";
+                    }
+                });
+
+                card.addEventListener("mouseleave", function () {
+                    card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+                    var glare = card.querySelector(".tilt-glare");
+                    if (glare) {
+                        glare.style.background = "";
+                    }
+                });
+            });
+        }
+
+        // =====================================================================
+        // MODULE 8 — Theme Toggle
+        // =====================================================================
+        function initThemeToggle() {
+            var btn = document.getElementById("themeToggle");
+            if (!btn) return;
+
+            var savedTheme = localStorage.getItem("pes-role-theme");
+            if (savedTheme) {
+                document.body.setAttribute("data-theme", savedTheme);
+            }
+            updateIcon();
+
+            btn.addEventListener("click", function () {
+                var curr = document.body.getAttribute("data-theme");
+                var next = curr === "dark" ? "light" : "dark";
+                document.body.setAttribute("data-theme", next);
+                localStorage.setItem("pes-role-theme", next);
+                updateIcon();
+
+                // Refresh radar charts for new theme palette
+                updateLiveRadar();
+                if (lastPrediction) {
+                    var inps = lastPrediction.inputs || {};
+                    var vals = [
+                        inps.Agresivitas !== undefined ? inps.Agresivitas : 3,
+                        inps.Kreativitas !== undefined ? inps.Kreativitas : 3,
+                        inps.Disiplin !== undefined ? inps.Disiplin : 3,
+                        inps.Kerjasama !== undefined ? inps.Kerjasama : 3,
+                        inps.Refleks !== undefined ? inps.Refleks : 3
+                    ];
+                    drawRadar("resultRadar", vals, {
+                        fillColor: "rgba(56, 139, 253, 0.35)",
+                        strokeColor: "#58a6ff",
+                        dotColor: "#3fb950",
+                        animated: false
+                    });
+                }
+            });
+
+            function updateIcon() {
+                var theme = document.body.getAttribute("data-theme");
+                btn.textContent = theme === "dark" ? "🌙" : "☀️";
+            }
+        }
+
+        // =====================================================================
+        // Result Rendering Engine (`renderResult`)
+        // =====================================================================
+        function renderResult(data) {
+            lastPrediction = data;
+            var result = data.result || data;
+            var inputs = data.inputs || {};
+            var panel = document.getElementById("resultContent");
+            if (!panel) return;
+
+            // Tie-break badge
+            var tieHtml = "";
+            if (result.tie_resolved) {
+                tieHtml = '<span class="tie-badge" title="Kondisi suara seri dipecahkan melalui Inverse Distance Weighting">Tie-Break: IDW Resolved</span>';
+            }
+
+            // Neighbors table (handles both objects and tuples)
+            var neighborsHtml = "";
+            if (result.neighbors && result.neighbors.length) {
+                neighborsHtml += '<div class="neighbors-section"><h3>Log 5 Tetangga Terdekat (K=5):</h3>';
+                neighborsHtml += '<div class="neighbor-table-wrapper"><table class="neighbor-table"><thead><tr><th>Rank</th><th>Label Sampel Latih</th><th>Jarak Euclidean</th></tr></thead><tbody>';
+                for (var i = 0; i < result.neighbors.length; i++) {
+                    var n = result.neighbors[i];
+                    var dist = (n.distance !== undefined) ? n.distance : (Array.isArray(n) ? n[0] : 0);
+                    var label = (n.label !== undefined) ? n.label : (Array.isArray(n) ? n[1] : "");
+                    var distFormatted = parseFloat(dist).toFixed(4);
+                    var pillClass = "pill-" + String(label).toLowerCase();
+                    neighborsHtml += '<tr>';
+                    neighborsHtml += '<td>#' + (i + 1) + '</td>';
+                    neighborsHtml += '<td><span class="pill ' + pillClass + '">' + label + '</span></td>';
+                    neighborsHtml += '<td><code>' + distFormatted + '</code></td>';
+                    neighborsHtml += '</tr>';
+                }
+                neighborsHtml += '</tbody></table></div></div>';
+            }
+
+            var roleStr = String(result.role || "Unknown");
+            var roleClass = "role-" + roleStr.toLowerCase();
+
+            panel.innerHTML =
+                '<div class="result-header">' +
+                    '<div>' +
+                        '<h2>Hasil Analisis Peran Taktis</h2>' +
+                        '<span class="model-badge">Engine: Scratch KNN (Euclidean)</span>' +
+                    '</div>' +
+                    '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">' +
+                        '<button type="button" class="btn-export" onclick="unflipCard()" title="Kembali ke Live Preview">↺ Live Preview</button>' +
+                        '<button type="button" class="btn-export" onclick="exportReport()" title="Unduh arsip laporan akademik (.txt)">📄 Unduh Laporan (.txt)</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="role-summary-banner">' +
+                    '<div class="role-main">' +
+                        '<span class="role-badge ' + roleClass + '">' + roleStr + '</span>' +
+                        tieHtml +
+                    '</div>' +
+                    '<div class="confidence-container">' +
+                        '<div class="confidence-label">' +
+                            '<span>Tingkat Keyakinan (Confidence):</span>' +
+                            '<strong class="confidence-value">0%</strong>' +
+                        '</div>' +
+                        '<div class="confidence-track">' +
+                            '<div class="confidence-fill" style="width: 0%;"></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="chart-wrapper"><canvas id="resultRadar" width="340" height="340"></canvas></div>' +
+                '<div class="specs-grid">' +
+                    '<div class="spec-item"><span class="spec-label">Rekomendasi Role PES 2026:</span><span class="spec-value highlight">' + (result.role_pes || "") + '</span></div>' +
+                    '<div class="spec-item"><span class="spec-label">Formasi Ideal:</span><span class="spec-value">' + (result.formation || "") + '</span></div>' +
+                    '<div class="spec-item"><span class="spec-label">Gaya Bermain Taktis:</span><span class="spec-value">' + (result.playstyle || "") + '</span></div>' +
+                '</div>' +
+                '<div class="desc-box"><strong>Karakteristik Taktikal:</strong><p>' + (result.desc || "") + '</p></div>' +
+                '<div class="instructions-box"><strong>Instruksi Lapangan PES 2026:</strong><p>' + (result.instructions || "") + '</p></div>' +
+                neighborsHtml;
+
+            // Draw bright result radar
+            var vals = [
+                inputs.Agresivitas !== undefined ? inputs.Agresivitas : (parseFloat(document.getElementById("q1").value) || 3),
+                inputs.Kreativitas !== undefined ? inputs.Kreativitas : (parseFloat(document.getElementById("q2").value) || 3),
+                inputs.Disiplin !== undefined ? inputs.Disiplin : (parseFloat(document.getElementById("q3").value) || 3),
+                inputs.Kerjasama !== undefined ? inputs.Kerjasama : (parseFloat(document.getElementById("q4").value) || 3),
+                inputs.Refleks !== undefined ? inputs.Refleks : (parseFloat(document.getElementById("q5").value) || 3)
+            ];
+
+            setTimeout(function () {
+                drawRadar("resultRadar", vals, {
+                    fillColor: "rgba(56, 139, 253, 0.35)",
+                    strokeColor: "#58a6ff",
+                    dotColor: "#3fb950",
+                    animated: true
+                });
+            }, 100);
+
+            // Animate confidence counter and progress bar
+            var confEl = panel.querySelector(".confidence-value");
+            var confFill = panel.querySelector(".confidence-fill");
+            var confVal = parseFloat(result.confidence) || 0;
+            if (confEl) {
+                animateCounter(confEl, confVal, 1500);
+            }
+            if (confFill) {
+                setTimeout(function () {
+                    confFill.style.width = confVal + "%";
+                }, 50);
+            }
+
+            initTilt();
+        }
+
+        // =====================================================================
+        // MODULE 2 — AJAX Form Submission
+        // =====================================================================
+        function initAjaxForm() {
+            var form = document.getElementById("predictionForm");
+            if (!form) return;
+
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                var btn = document.getElementById("submitBtn");
+                btn.classList.add("btn-loading");
+
+                fetch("/predict", {
+                    method: "POST",
+                    body: new FormData(form)
+                })
+                .then(function (res) {
+                    return res.json().then(function (json) {
+                        return { ok: res.ok, status: res.status, data: json };
+                    });
+                })
+                .then(function (response) {
+                    btn.classList.remove("btn-loading");
+                    var data = response.data;
+                    if (!response.ok || data.error || !data.success) {
+                        showError(data.error || "Gagal memproses prediksi input.");
+                        return;
+                    }
+                    renderResult(data);
+                    window.flipCard();
+                })
+                .catch(function (err) {
+                    btn.classList.remove("btn-loading");
+                    console.warn("AJAX failed, falling back to standard HTTP POST:", err);
+                    form.submit();
+                });
+            });
+        }
+
+        function showError(msg) {
+            var existing = document.querySelectorAll(".alert-error.ajax-error");
+            existing.forEach(function (el) { el.remove(); });
+
+            var div = document.createElement("div");
+            div.className = "alert alert-error animate-fadein ajax-error";
+            div.innerHTML = '<div class="alert-icon">⚠️</div><div class="alert-content"><strong>Kesalahan Validasi:</strong><p>' + msg + '</p></div>';
+
+            var header = document.querySelector("header");
+            if (header && header.nextElementSibling) {
+                header.parentNode.insertBefore(div, header.nextElementSibling);
+            }
+
+            setTimeout(function () { div.remove(); }, 6000);
+        }
+
+        // =====================================================================
+        // Export Report (.txt download)
+        // =====================================================================
+        window.exportReport = function () {
+            var data = lastPrediction;
+            if (!data) {
+                alert("Belum ada data hasil prediksi untuk diekspor. Silakan lakukan prediksi terlebih dahulu.");
+                return;
+            }
+
+            var result = data.result || data;
+            var inputs = data.inputs || {};
+
+            var neighborsLines = "";
+            if (result.neighbors && result.neighbors.length) {
+                for (var i = 0; i < result.neighbors.length; i++) {
+                    var n = result.neighbors[i];
+                    var dist = (n.distance !== undefined) ? n.distance : (Array.isArray(n) ? n[0] : 0);
+                    var label = (n.label !== undefined) ? n.label : (Array.isArray(n) ? n[1] : "");
+                    var distFormatted = parseFloat(dist).toFixed(4);
+                    var padLabel = (label + "            ").substring(0, 12);
+                    neighborsLines += "  - Peringkat #" + (i + 1) + ": Kelas Latih = " + padLabel + " | Jarak Geometris = " + distFormatted + "\n";
+                }
+            }
+
+            var reportText = [
                 "==================================================================",
                 " LAPORAN HASIL PREDIKSI PERAN TAKTIS SEPAK BOLA (PES 2026)",
                 " SISTEM KLASIFIKASI K-NEAREST NEIGHBORS (KNN) DARI DASAR (SCRATCH)",
@@ -390,11 +890,11 @@
                 "==================================================================",
                 "",
                 "[1] SKOR FITUR KARAKTER INPUT (Skala 1.0 - 5.0):",
-                "  - Agresivitas & Pengambilan Risiko : {{ '%.1f'|format(inputs.Agresivitas) }}",
-                "  - Visi Strategis & Kreativitas     : {{ '%.1f'|format(inputs.Kreativitas) }}",
-                "  - Disiplin Defensif & Kesabaran    : {{ '%.1f'|format(inputs.Disiplin) }}",
-                "  - Kerjasama Tim & Distribusi       : {{ '%.1f'|format(inputs.Kerjasama) }}",
-                "  - Refleks Instan & Tanggap Krisis  : {{ '%.1f'|format(inputs.Refleks) }}",
+                "  - Agresivitas & Pengambilan Risiko : " + parseFloat(inputs.Agresivitas || 0).toFixed(1),
+                "  - Visi Strategis & Kreativitas     : " + parseFloat(inputs.Kreativitas || 0).toFixed(1),
+                "  - Disiplin Defensif & Kesabaran    : " + parseFloat(inputs.Disiplin || 0).toFixed(1),
+                "  - Kerjasama Tim & Distribusi       : " + parseFloat(inputs.Kerjasama || 0).toFixed(1),
+                "  - Refleks Instan & Tanggap Krisis  : " + parseFloat(inputs.Refleks || 0).toFixed(1),
                 "",
                 "[2] FORMULA & METODOLOGI SCRATCH KNN (ZERO-LIBRARY ML):",
                 "  A. Jarak Euclidean Antar-Vektor:",
@@ -407,42 +907,125 @@
                 "     Inverse Distance Weighting: W(c) = sum( 1 / (d_j + 1e-6) )",
                 "",
                 "[3] HASIL KLASIFIKASI MODEL (K=5):",
-                "  - Prediksi Kategori Peran          : {{ result.role }}",
-                "  - Tingkat Keyakinan (Confidence)   : {{ result.confidence }}%",
-                "  - Status Resolusi Seri (Tie-Break) : {{ 'DISELESAIKAN DENGAN IDW' if result.tie_resolved else 'MAYORITAS MUTLAK (TIDAK SERI)' }}",
-                "  - Rekomendasi Posisi PES 2026      : {{ result.role_pes }}",
-                "  - Pola Formasi Rujukan             : {{ result.formation }}",
-                "  - Filosofi Gaya Bermain (Playstyle): {{ result.playstyle }}",
+                "  - Prediksi Kategori Peran          : " + (result.role || ""),
+                "  - Tingkat Keyakinan (Confidence)   : " + (result.confidence || 0) + "%",
+                "  - Status Resolusi Seri (Tie-Break) : " + (result.tie_resolved ? "DISELESAIKAN DENGAN IDW" : "MAYORITAS MUTLAK (TIDAK SERI)"),
+                "  - Rekomendasi Posisi PES 2026      : " + (result.role_pes || ""),
+                "  - Pola Formasi Rujukan             : " + (result.formation || ""),
+                "  - Filosofi Gaya Bermain (Playstyle): " + (result.playstyle || ""),
                 "",
                 "[4] DESKRIPSI ANALITIS KARAKTER:",
-                "  {{ result.desc }}",
+                "  " + (result.desc || ""),
                 "",
                 "[5] INSTRUKSI LAPANGAN PES 2026:",
-                "  {{ result.instructions }}",
+                "  " + (result.instructions || ""),
                 "",
                 "[6] LOG KALKULASI 5 TETANGGA TERDEKAT (K-NEAREST NEIGHBORS):",
-                {% for dist, label in result.neighbors %}
-                "  - Peringkat #{{ loop.index }}: Kelas Latih = {{ '%-12s'|format(label) }} | Jarak Geometris = {{ '%.4f'|format(dist) }}",
-                {% endfor %}
-                "",
+                neighborsLines,
                 "==================================================================",
                 "Catatan Akademik: Algoritma dibangun 100% murni tanpa menggunakan",
                 "pustaka pihak ketiga (tanpa Scikit-Learn, Numpy, Pandas, Scipy).",
                 "=================================================================="
             ].join("\n");
 
-            const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
-            const link = document.createElement("a");
+            var blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
+            var link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = "Laporan_Prediksi_Role_PES2026_Kelompok6_WongUrakan.txt";
             link.click();
             URL.revokeObjectURL(link.href);
-            {% else %}
-            alert("Belum ada data hasil prediksi untuk diekspor. Silakan lakukan prediksi terlebih dahulu.");
+        };
+
+        // =====================================================================
+        // Server-Side Jinja Hydration (when rendered via traditional POST)
+        // =====================================================================
+        {% if result and not result.error and inputs %}
+        (function () {
+            lastPrediction = {
+                result: {
+                    role: {{ result.role|tojson }},
+                    confidence: {{ result.confidence|tojson }},
+                    tie_resolved: {{ result.tie_resolved|tojson }},
+                    role_pes: {{ result.role_pes|tojson }},
+                    formation: {{ result.formation|tojson }},
+                    playstyle: {{ result.playstyle|tojson }},
+                    desc: {{ result.desc|tojson }},
+                    instructions: {{ result.instructions|tojson }},
+                    neighbors: [
+                        {% for dist, label in result.neighbors %}
+                        [{{ dist }}, {{ label|tojson }}]{{ "," if not loop.last }}
+                        {% endfor %}
+                    ]
+                },
+                inputs: {
+                    Agresivitas: {{ inputs.Agresivitas|tojson }},
+                    Kreativitas: {{ inputs.Kreativitas|tojson }},
+                    Disiplin: {{ inputs.Disiplin|tojson }},
+                    Kerjasama: {{ inputs.Kerjasama|tojson }},
+                    Refleks: {{ inputs.Refleks|tojson }}
+                }
+            };
+        })();
+        {% endif %}
+
+        // =====================================================================
+        // DOM Initialization
+        // =====================================================================
+        document.addEventListener("DOMContentLoaded", function () {
+            // Module 1: Particles
+            ParticleField.init();
+
+            // Module 8: Theme
+            initThemeToggle();
+
+            // Module 5: Ripple
+            initRipple();
+
+            // Module 7: 3D Tilt
+            initTilt();
+
+            // Module 3: Initial live preview radar
+            window.updateLiveRadar();
+
+            // Module 2: AJAX form
+            initAjaxForm();
+
+            // Server-side fallback hydration
+            {% if result and not result.error and inputs %}
+            (function () {
+                var vals = [
+                    {{ inputs.Agresivitas }},
+                    {{ inputs.Kreativitas }},
+                    {{ inputs.Disiplin }},
+                    {{ inputs.Kerjasama }},
+                    {{ inputs.Refleks }}
+                ];
+                setTimeout(function () {
+                    drawRadar("resultRadar", vals, {
+                        fillColor: "rgba(56, 139, 253, 0.35)",
+                        strokeColor: "#58a6ff",
+                        dotColor: "#3fb950",
+                        animated: false
+                    });
+
+                    var confEl = document.querySelector(".confidence-value");
+                    if (confEl) {
+                        animateCounter(confEl, {{ result.confidence }}, 1500);
+                    }
+                    var confFill = document.querySelector(".confidence-fill");
+                    if (confFill) {
+                        confFill.style.width = "0%";
+                        setTimeout(function () {
+                            confFill.style.width = "{{ result.confidence }}%";
+                        }, 50);
+                    }
+                    window.flipCard();
+                }, 200);
+            })();
             {% endif %}
-        }
+        });
+
+    })();
     </script>
 </body>
-</html>
-
 </html>
